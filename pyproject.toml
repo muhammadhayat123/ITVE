@@ -1,0 +1,17 @@
+[project]
+name = "itve"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "dotenv>=0.9.9",
+    "fastapi>=0.135.1",
+    "mongopy>=0.1",
+    "passlib>=1.7.4",
+    "pillow>=10.0.0",
+    "pydantic>=2.12.5",
+    "pymongo>=4.6.0",
+    "python-multipart>=0.0.9",
+    "uvicorn>=0.41.0",
+]
