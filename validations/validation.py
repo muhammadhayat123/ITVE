@@ -56,3 +56,4 @@ class SchoolEditProfile(BaseModel):
     longitude: Optional[float] = None
 
     profile_image: Optional[str] = None
+

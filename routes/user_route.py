@@ -1,9 +1,10 @@
-from fastapi import Depends, FastAPI, APIRouter, HTTPException, status
-from pydantic import BaseModel
+from fastapi import Depends, FastAPI, APIRouter, HTTPException, dependencies, status
 from validations.validation import UserCreate
 from config.db import users_collection
 from utils.util_helper import hash_password
 from validations.validation import SchoolEditProfile
+from utils.util_helper import verify_token, create_access_token, decode_access_token
+
 
 
 
@@ -21,7 +22,7 @@ user_route = APIRouter()
 # Sign-up Route
 # -------------------------------
 @user_route.post("/sign-up", status_code=status.HTTP_201_CREATED)
-def register(user: UserCreate):
+def register(user: UserCreate,):
     try:
         existing_user = users_collection.find_one({
             "$or": [
@@ -65,12 +66,22 @@ def register(user: UserCreate):
 
         result = users_collection.insert_one(new_user)
 
+        token = create_access_token(data={
+                "email": new_user["email"],
+                "username": new_user["username"]
+                })
+        
+
+        user_data = {
+            "email": new_user["email"],
+            "username": new_user["username"],
+            "user_id": str(result.inserted_id),
+            "token": token
+        }
+
+
         return {
-            "data": {
-                "id": str(result.inserted_id),
-                "username": user.username,
-                "email": user.email
-            },
+            "data": user_data,
             "message": "User Signed up successfully",
             "status": "success"
         }
@@ -137,12 +148,11 @@ def get_school_profile(username: str):
 # -------------------------------
 # Edit School Profile Route
 # -------------------------------
-from validations.validation import SchoolEditProfile
 
-@user_route.put("/edit-profile/{username}", status_code=status.HTTP_200_OK)
+@user_route.put("/edit-profile/{username}",dependencies=[Depends(verify_token)],status_code=status.HTTP_200_OK)
 def edit_school_profile(username: str, profile: SchoolEditProfile):
-    try:
 
+    try:
         user = users_collection.find_one({"username": username})
 
         if not user:
@@ -151,7 +161,7 @@ def edit_school_profile(username: str, profile: SchoolEditProfile):
         # Check unique email
         existing_email = users_collection.find_one({
             "email": profile.email,
-            "username": {"$ne": username}
+            "_id": {"$ne": user["_id"]}
         })
 
         if existing_email:
@@ -159,7 +169,7 @@ def edit_school_profile(username: str, profile: SchoolEditProfile):
 
         # Check unique username
         existing_username = users_collection.find_one({
-             "username": profile.username,
+            "username": profile.username,
             "_id": {"$ne": user["_id"]}
         })
 
@@ -182,7 +192,7 @@ def edit_school_profile(username: str, profile: SchoolEditProfile):
         }
 
         users_collection.update_one(
-            {"username": username},
+            {"_id": user["_id"]},
             {"$set": update_data}
         )
 
