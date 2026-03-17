@@ -68,7 +68,9 @@ def register(user: UserCreate,):
 
         token = create_access_token(data={
                 "email": new_user["email"],
-                "username": new_user["username"]
+                "username": new_user["username"],
+                "user_id": str(result.inserted_id)
+
                 })
         
 
