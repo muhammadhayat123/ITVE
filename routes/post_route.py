@@ -65,3 +65,79 @@ def comment_post(post_id: str, user_email: str, comment_text: str):
     )
 
     return {"status": "success", "total_comments": post.get("comments", 0) + 1}
+
+
+
+@post_route.get("/get-posts")
+def get_posts():
+    posts = []
+
+    for post in posts_collection.find().sort("created_at", -1):
+        post["_id"] = str(post["_id"])
+        posts.append(post)
+
+    return {
+        "status": "success",
+        "data": posts
+    }
+
+
+
+
+@post_route.get("/get-post/{post_id}")
+def get_single_post(post_id: str):
+
+    post = posts_collection.find_one({"_id": ObjectId(post_id)})
+
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
+
+    post["_id"] = str(post["_id"])
+
+    return {
+        "status": "success",
+        "data": post
+    }
+
+
+@post_route.put("/update-post/{post_id}")
+def update_post(post_id: str, post: CreatePost):
+
+    existing_post = posts_collection.find_one({"_id": ObjectId(post_id)})
+
+    if not existing_post:
+        raise HTTPException(status_code=404, detail="Post not found")
+
+    updated_data = {
+        "content": post.content,
+        "image": post.image,
+        "updated_at": datetime.utcnow()
+    }
+
+    posts_collection.update_one(
+        {"_id": ObjectId(post_id)},
+        {"$set": updated_data}
+    )
+
+    return {
+        "status": "success",
+        "message": "Post updated successfully"
+    }
+
+
+
+
+@post_route.delete("/delete-post/{post_id}")
+def delete_post(post_id: str):
+
+    post = posts_collection.find_one({"_id": ObjectId(post_id)})
+
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
+
+    posts_collection.delete_one({"_id": ObjectId(post_id)})
+
+    return {
+        "status": "success",
+        "message": "Post deleted successfully"
+    }
